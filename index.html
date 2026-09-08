@@ -6063,6 +6063,53 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     var html = '<div class="greet"><h1>Good morning, '+name+'.</h1>'+
     '<div class="sub">Group Administrator &nbsp;&middot;&nbsp; '+GROUP_STORES.length+' Rooftops &nbsp;&middot;&nbsp; </div></div>';
 
+    // ── HERO ROI PANEL (economic-buyer landing) ─────────────────────────
+    // Numbers anchored to GROUP_STORES demo data:
+    //   totalGross (sum of mtdGross across 20 stores) = $2,086,780
+    //   totalBuy   (sum of mtdBuy   across 20 stores) = 450 units
+    //   Cardinal cost = $4,000/rooftop × 20 = $80,000/yr
+    //   ROI multiple = totalGross / Cardinal cost ≈ 26x (conservative 1× MTD attribution)
+    var heroUplift    = totalGross;                       // Cardinal-attributed gross (conservative)
+    var heroUnits     = totalBuy;                          // units decisioned
+    var heroPerUnit   = Math.round(heroUplift/heroUnits);  // avg attributed gross per unit
+    var heroCost      = 4000 * GROUP_STORES.length;        // annual Cardinal cost at $4k/rooftop tier
+    var heroRoi       = Math.round(heroUplift / heroCost); // ROI multiple
+    var heroUpliftFmt = '$'+(heroUplift/1000000).toFixed(2)+'M';
+
+    html += '<div id="heroRoi" style="background:linear-gradient(135deg,#0b1f2a 0%,#0a2b34 100%);border:1px solid rgba(79,152,163,0.35);border-radius:14px;padding:26px 30px;margin-bottom:22px;box-shadow:0 4px 24px rgba(0,0,0,0.25)">'+
+      '<div style="font-size:11px;letter-spacing:1.6px;color:#4F98A3;font-weight:600;text-transform:uppercase;margin-bottom:14px">Miami Auto Group &nbsp;·&nbsp; '+GROUP_STORES.length+' Rooftops &nbsp;·&nbsp; Last 30 Days</div>'+
+      '<div id="heroRoiValue" style="font-size:74px;line-height:1;font-weight:700;color:#ffffff;font-variant-numeric:tabular-nums lining-nums;margin-bottom:8px;letter-spacing:-1.5px">$0.00M</div>'+
+      '<div style="font-size:15px;color:rgba(255,255,255,0.78);font-weight:500;margin-bottom:20px">in Cardinal AI-attributed gross profit</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:18px;margin-bottom:22px;font-size:13.5px;color:rgba(255,255,255,0.85);font-variant-numeric:tabular-nums lining-nums">'+
+        '<span style="display:inline-flex;align-items:center;gap:6px"><span style="color:#6DDBB5;font-weight:700">▲</span> '+heroUnits.toLocaleString()+' units decisioned</span>'+
+        '<span style="color:rgba(255,255,255,0.35)">·</span>'+
+        '<span>$'+heroPerUnit.toLocaleString()+'/unit avg</span>'+
+        '<span style="color:rgba(255,255,255,0.35)">·</span>'+
+        '<span style="color:#4F98A3;font-weight:700">'+heroRoi+'× ROI</span>'+
+      '</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:10px">'+
+        '<button class="btn btn-green" style="font-size:12.5px;padding:9px 16px" onclick="document.getElementById(\'gaStoreGrid\')?document.getElementById(\'gaStoreGrid\').scrollIntoView({behavior:\'smooth\',block:\'start\'}):window.scrollBy({top:600,behavior:\'smooth\'})">View Store Breakdown ↓</button>'+
+        '<button class="btn btn-ghost" style="font-size:12.5px;padding:9px 16px" onclick="alert(\'Board Report export coming soon — will render a PDF summary of Cardinal AI-attributed ROI, per-store contribution, and YoY delta.\')">Download Board Report</button>'+
+      '</div>'+
+    '</div>';
+
+    // Kick off the count-up animation once the hero is in DOM
+    setTimeout(function(){
+      var el = document.getElementById('heroRoiValue');
+      if(!el) return;
+      var target = heroUplift, dur = 1200, start = performance.now();
+      function step(t){
+        var p = Math.min(1, (t - start)/dur);
+        // easeOutCubic
+        var eased = 1 - Math.pow(1-p, 3);
+        var v = target * eased;
+        el.textContent = '$'+(v/1000000).toFixed(2)+'M';
+        if(p < 1) requestAnimationFrame(step);
+        else el.textContent = heroUpliftFmt;
+      }
+      requestAnimationFrame(step);
+    }, 50);
+
     // Alert strips removed — status visible on store cards
 
     // ── 8-button CTA bar (same as GM)
@@ -6172,8 +6219,8 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     html += '</div>'; // end row 2 snapshots
 
     // ── STORE HEALTH TILES — 2-col grid, Auction Digest box size, tappable
-    html += '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">'+GROUP_STORES.length+' Rooftops &mdash; Tap to Drill In</div>';
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+    html += '<div id="gaStoreGridHeader" style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">'+GROUP_STORES.length+' Rooftops &mdash; Tap to Drill In</div>';
+    html += '<div id="gaStoreGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
 
     GROUP_STORES.forEach(function(s,i){
       // Aging % = (45-60d caution + 61+d critical + aged) / total used inventory
