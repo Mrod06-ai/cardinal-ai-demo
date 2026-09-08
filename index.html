@@ -1451,6 +1451,26 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
   .ap-confirm-sub{font-size:13px;color:var(--ink-2);line-height:1.6;max-width:320px}
 
   </style>
+
+  <!-- Analytics: Plausible (privacy-friendly, no cookies, no consent banner) -->
+  <script defer data-domain="demo.cardinaltech.ai" src="https://plausible.io/js/script.tagged-events.outbound-links.js"></script>
+  <script>
+    // Plausible shim: expose window.plausible() as a no-op until the script loads.
+    // Also bridge the existing window.gtag() calls to plausible() so the
+    // board_report_download event fires on both, without breaking either.
+    window.plausible = window.plausible || function(){ (window.plausible.q = window.plausible.q || []).push(arguments); };
+    (function(){
+      var origGtag = window.gtag;
+      window.gtag = function(){
+        try{
+          if(arguments[0] === 'event' && typeof arguments[1] === 'string'){
+            window.plausible(arguments[1], { props: arguments[2] || {} });
+          }
+        }catch(e){}
+        if(typeof origGtag === 'function') return origGtag.apply(this, arguments);
+      };
+    })();
+  </script>
 </head>
 <body data-demo-view="signin">
 
@@ -1620,25 +1640,41 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     margin-top:18px;color:rgba(255,255,255,.35);font-size:11px;text-align:left;line-height:1.5;
   }
 
-  /* ── RESPONSIVE ── */
+  /* ── RESPONSIVE — stacked (mobile + narrow desktop) ── */
   @media (max-width: 960px){
     .ds-split{flex-direction:column}
     .ds-hero{
       flex:none;
-      padding:36px 32px 32px;
+      padding:48px 32px 44px;
       min-height:auto;
+      align-items:center;text-align:center;
     }
+    .ds-hero-brand{margin:0 auto 28px;justify-content:center}
+    .ds-hero-body{margin:0 auto;max-width:560px}
     .ds-hero-headline{font-size:32px;margin-bottom:14px}
-    .ds-hero-sub{font-size:15px;margin-bottom:22px}
-    .ds-hero-features{gap:11px;margin-bottom:22px}
+    .ds-hero-sub{margin-left:auto;margin-right:auto;font-size:15px;margin-bottom:22px;max-width:520px}
+    .ds-hero-features{gap:11px;margin-bottom:0;text-align:left;max-width:440px;margin-left:auto;margin-right:auto}
     .ds-hero-footer{display:none}
     .ds-form-panel{
       flex:1;
-      padding:36px 32px 40px;
+      padding:40px 32px 44px;
       border-left:none;border-top:1px solid rgba(255,255,255,.06);
       min-width:0;
+      position:relative;
+      background:
+        radial-gradient(ellipse at 15% 20%, rgba(201,152,42,.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 80%, rgba(42,74,99,.35) 0%, transparent 55%),
+        #0F1E2E;
     }
-    .ds-card{max-width:100%}
+    .ds-form-panel::before{
+      content:"";position:absolute;inset:0;
+      background-image:radial-gradient(rgba(201,152,42,.08) 1px, transparent 1px);
+      background-size:22px 22px;
+      mask-image:radial-gradient(ellipse at center, black 0%, transparent 70%);
+      -webkit-mask-image:radial-gradient(ellipse at center, black 0%, transparent 70%);
+      pointer-events:none;
+    }
+    .ds-card{max-width:440px;margin:0 auto;position:relative;z-index:1}
   }
   @media (max-width: 480px){
     .ds-hero{padding:28px 22px 24px}
@@ -1741,7 +1777,7 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
             <div class="ds-brand-tagline">Know Before You Buy.</div>
           </div>
         </div>
-        <span class="ds-demo-badge">Demo Sign-In</span>
+        <span class="ds-demo-badge">Live Preview</span>
         <h2 class="ds-title">Welcome to Cardinal AI</h2>
         <p class="ds-sub">Sign in to explore what dealership teams see when they use Cardinal AI, across every role.</p>
         <form id="ds-form" onsubmit="return demoSignIn(event)" novalidate>
@@ -1755,13 +1791,13 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
           </div>
           <button type="submit" class="ds-cta">Sign In</button>
         </form>
-        <div class="ds-preview-note">This is a demo. Any credentials work, you'll pick a role next to explore the platform.</div>
+        <div class="ds-preview-note">Sign in with any credentials to explore Cardinal AI in your role. All 20 stores, 100 units of inventory, and 4 weeks of scored appraisal data are live.</div>
         <div class="ds-trust" role="list" aria-label="Platform security">
           <span class="ds-trust-item" role="listitem"><span class="ds-trust-dot"></span>Enterprise-grade security</span>
           <span class="ds-trust-item" role="listitem"><span class="ds-trust-dot"></span>Multi-tenant secure</span>
           <span class="ds-trust-item" role="listitem"><span class="ds-trust-dot"></span>GDPR-ready</span>
         </div>
-        <div class="ds-footer">Powered by Cardinal AI · Preview Environment</div>
+        <div class="ds-footer">Cardinal AI · Know Before You Buy.</div>
       </div>
     </section>
   </div>
