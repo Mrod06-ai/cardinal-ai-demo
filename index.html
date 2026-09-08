@@ -1927,8 +1927,10 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     }, 250);
   };
 
-  /* Wire Cardinal AI logo in the sidebar to go to role picker.
-     Also wire Sign Out to go back to sign-in screen. */
+  /* Wire Cardinal AI logo in the sidebar to return to the role's home dashboard.
+     Also wire Sign Out to go back to sign-in screen.
+     Sept 8 2026 punch list item 3: logo click should return home from anywhere,
+     not send the user back to the role picker. */
   document.addEventListener('click', function(ev){
     var target = ev.target;
     /* Cardinal AI logo click — finds .sb-logo anywhere in the dashboard */
@@ -1936,11 +1938,12 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     if(logo && body.getAttribute('data-demo-view')==='dashboard'){
       ev.preventDefault();
       ev.stopPropagation();
-      /* Clear store drill-down context and go to role picker */
+      /* Clear store drill-down context so Group Admin lands at the group-level home */
       window._storeCtx = null;
       window._groupAdminStoreCtx = null;
       window._groupAdminOrigin = false;
-      body.setAttribute('data-demo-view', 'role-picker');
+      /* Return to the current role's home dashboard */
+      try { if(typeof renderNav === 'function'){ renderNav('home'); } } catch(e){}
       return;
     }
     /* Sign Out click — finds .sb-signout */
