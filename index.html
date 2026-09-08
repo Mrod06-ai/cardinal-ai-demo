@@ -1472,49 +1472,190 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
   body[data-demo-view="dashboard"] #demo-role-picker{display:none}
   body[data-demo-view="dashboard"] #app{display:block}
 
-  /* ── SIGN-IN LAYER ── */
+  /* ── SIGN-IN LAYER (v2 Enterprise Split-Screen) ── */
   #demo-signin{
     position:fixed;inset:0;z-index:1000;
-    background:linear-gradient(135deg,#0D1B2A 0%,#1B3548 60%,#2A4A63 100%);
-    align-items:center;justify-content:center;
+    background:#0D1B2A;
+    display:none;
     font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    overflow-y:auto;
+  }
+  body[data-demo-view="signin"] #demo-signin{display:flex}
+
+  .ds-split{
+    display:flex;width:100%;min-height:100vh;
+  }
+  /* ── LEFT: Marketing hero ── */
+  .ds-hero{
+    flex:1 1 55%;
+    background:
+      radial-gradient(ellipse at 20% 15%, rgba(201,152,42,.14) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 85%, rgba(42,74,99,.55) 0%, transparent 60%),
+      linear-gradient(135deg,#0A1622 0%,#132538 55%,#1B3548 100%);
+    padding:56px 60px 44px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    position:relative;overflow:hidden;
+  }
+  .ds-hero::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(201,152,42,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,152,42,.035) 1px, transparent 1px);
+    background-size:60px 60px;
+    mask-image:radial-gradient(ellipse at center, black 0%, transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse at center, black 0%, transparent 75%);
+    pointer-events:none;
+  }
+  .ds-hero-brand{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+  .ds-hero-logo{width:52px;height:52px;display:flex;align-items:center;justify-content:center}
+  .ds-hero-logo img{width:100%;height:100%;object-fit:contain;display:block}
+  .ds-hero-brand-name{color:#fff;font-size:15px;font-weight:800;letter-spacing:.16em;line-height:1.2}
+  .ds-hero-brand-tagline{color:rgba(255,255,255,.55);font-size:11px;font-weight:600;letter-spacing:.03em;margin-top:3px}
+
+  .ds-hero-body{position:relative;z-index:1;max-width:520px}
+  .ds-hero-eyebrow{
+    display:inline-block;padding:5px 12px;border-radius:14px;
+    background:rgba(201,152,42,.14);border:1px solid rgba(201,152,42,.28);
+    color:#E8B440;font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+    margin-bottom:22px;
+  }
+  .ds-hero-headline{
+    color:#fff;font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-.02em;
+    margin:0 0 18px;
+  }
+  .ds-hero-headline .accent{color:#E8B440}
+  .ds-hero-sub{
+    color:rgba(255,255,255,.72);font-size:16.5px;line-height:1.55;font-weight:400;
+    margin:0 0 32px;max-width:460px;
+  }
+  .ds-hero-features{
+    display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none;
+  }
+  .ds-hero-feat{
+    display:flex;align-items:flex-start;gap:12px;
+    color:rgba(255,255,255,.82);font-size:14px;line-height:1.45;
+  }
+  .ds-hero-feat-icon{
+    flex:none;width:22px;height:22px;border-radius:50%;
+    background:rgba(201,152,42,.16);border:1px solid rgba(201,152,42,.4);
+    display:flex;align-items:center;justify-content:center;
+    color:#E8B440;font-size:12px;font-weight:800;line-height:1;
+    margin-top:1px;
+  }
+  .ds-hero-feat b{color:#fff;font-weight:700}
+
+  .ds-hero-footer{position:relative;z-index:1;color:rgba(255,255,255,.42);font-size:11.5px;line-height:1.5}
+  .ds-hero-footer strong{color:rgba(255,255,255,.65);font-weight:600}
+
+  /* ── RIGHT: Sign-in form panel ── */
+  .ds-form-panel{
+    flex:1 1 45%;
+    background:#0F1E2E;
+    padding:56px 56px 44px;
+    display:flex;flex-direction:column;justify-content:center;
+    border-left:1px solid rgba(255,255,255,.06);
+    min-width:380px;
   }
   .ds-card{
-    width:420px;max-width:calc(100vw - 40px);
-    background:rgba(20,32,48,.85);backdrop-filter:blur(12px);
-    border:1px solid rgba(201,152,42,.35);
-    border-radius:16px;padding:36px 34px 30px;
-    box-shadow:0 20px 60px rgba(0,0,0,.4);
+    width:100%;max-width:400px;margin:0 auto;
+    background:transparent;border:none;border-radius:0;padding:0;box-shadow:none;
   }
-  .ds-brand{display:flex;align-items:center;gap:12px;margin-bottom:24px}
-  .ds-brand-logo{width:44px;height:44px;border-radius:10px;background:#C9982A;display:flex;align-items:center;justify-content:center;color:#0D1B2A;font-weight:900;font-size:18px;letter-spacing:.02em}
-  .ds-brand-name{color:#fff;font-size:15px;font-weight:800;letter-spacing:.14em;line-height:1.2}
-  .ds-brand-tagline{color:rgba(255,255,255,.55);font-size:11px;font-weight:600;letter-spacing:.02em;margin-top:2px}
-  .ds-demo-badge{display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(201,152,42,.18);color:#E8B440;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px}
-  .ds-title{color:#fff;font-size:22px;font-weight:800;margin-bottom:6px}
-  .ds-sub{color:rgba(255,255,255,.62);font-size:13px;line-height:1.5;margin-bottom:22px}
-  .ds-field{margin-bottom:14px}
-  .ds-label{color:rgba(255,255,255,.65);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;display:block}
+  .ds-brand{display:none} /* legacy in-form brand hidden — moved to hero */
+  .ds-demo-badge{
+    display:inline-block;padding:5px 11px;border-radius:12px;
+    background:rgba(201,152,42,.14);border:1px solid rgba(201,152,42,.32);
+    color:#E8B440;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  .ds-title{
+    color:#fff;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:-.01em;
+    margin:0 0 8px;
+  }
+  .ds-sub{
+    color:rgba(255,255,255,.62);font-size:14px;line-height:1.55;font-weight:400;
+    margin:0 0 28px;
+  }
+  .ds-field{margin-bottom:16px}
+  .ds-label{
+    color:rgba(255,255,255,.72);font-size:11px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;margin-bottom:7px;display:block;
+  }
   .ds-input{
     width:100%;box-sizing:border-box;
-    background:rgba(255,255,255,.06);color:#fff;
-    border:1px solid rgba(255,255,255,.14);border-radius:9px;
-    padding:11px 13px;font-size:14px;font-family:inherit;
-    transition:border-color .15s;
+    background:rgba(255,255,255,.04);color:#fff;
+    border:1px solid rgba(255,255,255,.12);border-radius:10px;
+    padding:13px 15px;font-size:14.5px;font-family:inherit;font-weight:500;
+    transition:border-color .15s, background .15s, box-shadow .15s;
   }
-  .ds-input:focus{outline:none;border-color:#C9982A;background:rgba(255,255,255,.09)}
-  .ds-input::placeholder{color:rgba(255,255,255,.32)}
+  .ds-input:focus{
+    outline:none;border-color:#C9982A;background:rgba(255,255,255,.07);
+    box-shadow:0 0 0 3px rgba(201,152,42,.18);
+  }
+  .ds-input::placeholder{color:rgba(255,255,255,.28)}
   .ds-cta{
-    width:100%;margin-top:8px;
+    width:100%;margin-top:12px;
     background:linear-gradient(180deg,#E8B440 0%,#C9982A 100%);
-    color:#0D1B2A;font-weight:800;font-size:14px;letter-spacing:.02em;
-    border:none;border-radius:9px;padding:12px 16px;cursor:pointer;
-    transition:transform .1s,box-shadow .15s;
+    color:#0D1B2A;font-weight:800;font-size:14.5px;letter-spacing:.02em;
+    border:none;border-radius:10px;padding:14px 16px;cursor:pointer;
+    transition:transform .1s, box-shadow .15s, filter .15s;
   }
-  .ds-cta:hover{box-shadow:0 6px 18px rgba(201,152,42,.35)}
+  .ds-cta:hover{box-shadow:0 8px 22px rgba(201,152,42,.32);filter:brightness(1.04)}
+  .ds-cta:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(201,152,42,.35), 0 8px 22px rgba(201,152,42,.32)}
   .ds-cta:active{transform:translateY(1px)}
-  .ds-footer{margin-top:18px;color:rgba(255,255,255,.4);font-size:11px;text-align:center;line-height:1.5}
-  .ds-preview-note{margin-top:14px;padding:10px 12px;background:rgba(201,152,42,.08);border-left:3px solid #C9982A;border-radius:6px;color:rgba(255,255,255,.62);font-size:11.5px;line-height:1.5}
+
+  .ds-preview-note{
+    margin-top:16px;padding:11px 13px;
+    background:rgba(201,152,42,.07);border-left:3px solid #C9982A;border-radius:6px;
+    color:rgba(255,255,255,.68);font-size:12px;line-height:1.5;
+  }
+  .ds-trust{
+    margin-top:22px;padding-top:20px;
+    border-top:1px solid rgba(255,255,255,.08);
+    display:flex;flex-wrap:wrap;gap:8px 14px;
+    color:rgba(255,255,255,.55);font-size:11.5px;line-height:1.4;
+  }
+  .ds-trust-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .ds-trust-dot{width:6px;height:6px;border-radius:50%;background:#4A9F4A;box-shadow:0 0 0 3px rgba(74,159,74,.15);flex:none}
+  .ds-footer{
+    margin-top:18px;color:rgba(255,255,255,.35);font-size:11px;text-align:left;line-height:1.5;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 960px){
+    .ds-split{flex-direction:column}
+    .ds-hero{
+      flex:none;
+      padding:36px 32px 32px;
+      min-height:auto;
+    }
+    .ds-hero-headline{font-size:32px;margin-bottom:14px}
+    .ds-hero-sub{font-size:15px;margin-bottom:22px}
+    .ds-hero-features{gap:11px;margin-bottom:22px}
+    .ds-hero-footer{display:none}
+    .ds-form-panel{
+      flex:1;
+      padding:36px 32px 40px;
+      border-left:none;border-top:1px solid rgba(255,255,255,.06);
+      min-width:0;
+    }
+    .ds-card{max-width:100%}
+  }
+  @media (max-width: 480px){
+    .ds-hero{padding:28px 22px 24px}
+    .ds-hero-brand{margin-bottom:22px}
+    .ds-hero-logo{width:44px;height:44px}
+    .ds-hero-headline{font-size:26px;line-height:1.15}
+    .ds-hero-sub{font-size:14px}
+    .ds-hero-features{gap:10px}
+    .ds-hero-feat{font-size:13px}
+    .ds-form-panel{padding:28px 22px 32px}
+    .ds-title{font-size:22px}
+    .ds-sub{font-size:13.5px;margin-bottom:22px}
+    .ds-trust{gap:6px 12px;font-size:11px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ds-input, .ds-cta{transition:none}
+  }
 
   /* ── ROLE PICKER LAYER ── */
   #demo-role-picker{
@@ -1563,30 +1704,66 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
 
 <!-- Sign-in layer -->
 <div id="demo-signin">
-  <div class="ds-card">
-    <div class="ds-brand">
-      <div class="ds-brand-logo">C</div>
-      <div>
-        <div class="ds-brand-name">CARDINAL AI</div>
-        <div class="ds-brand-tagline">Know Before You Buy.</div>
+  <div class="ds-split">
+    <!-- LEFT: Marketing hero -->
+    <aside class="ds-hero">
+      <div class="ds-hero-brand">
+        <div class="ds-hero-logo"><img src="cardinal_bird.png" alt="Cardinal AI"></div>
+        <div>
+          <div class="ds-hero-brand-name">CARDINAL AI</div>
+          <div class="ds-hero-brand-tagline">Know Before You Buy.</div>
+        </div>
       </div>
-    </div>
-    <span class="ds-demo-badge">Demo Sign-In</span>
-    <div class="ds-title">Welcome to Cardinal AI</div>
-    <div class="ds-sub">Sign in to explore what dealership teams see when they use Cardinal AI — across every role.</div>
-    <form id="ds-form" onsubmit="return demoSignIn(event)">
-      <div class="ds-field">
-        <label class="ds-label" for="ds-email">Work email</label>
-        <input class="ds-input" type="email" id="ds-email" placeholder="you@dealership.com" autocomplete="off" required>
+
+      <div class="ds-hero-body">
+        <span class="ds-hero-eyebrow">Dealership Intelligence Platform</span>
+        <h1 class="ds-hero-headline">The scoring engine <span class="accent">every role</span> at your dealership can trust.</h1>
+        <p class="ds-hero-sub">Cardinal AI reads every appraisal the way your best used-car manager would, then hands the right view to sales, management, and ownership.</p>
+        <ul class="ds-hero-features">
+          <li class="ds-hero-feat"><span class="ds-hero-feat-icon">✓</span><span><b>Deterministic scoring.</b> Same VIN, same conditions, same score. Every time.</span></li>
+          <li class="ds-hero-feat"><span class="ds-hero-feat-icon">✓</span><span><b>Role-aware surface.</b> One platform, tailored dashboards for GM, GSM, UCM, Sales, and Group Admin.</span></li>
+          <li class="ds-hero-feat"><span class="ds-hero-feat-icon">✓</span><span><b>Full audit trail.</b> Every valuation, every override, every decision. Recorded and reversible.</span></li>
+        </ul>
       </div>
-      <div class="ds-field">
-        <label class="ds-label" for="ds-password">Password</label>
-        <input class="ds-input" type="password" id="ds-password" placeholder="••••••••••" autocomplete="off" required>
+
+      <div class="ds-hero-footer">
+        <strong>Cardinal AI, Inc.</strong> · Miami, FL · Purpose-built for franchise and independent dealerships.
       </div>
-      <button type="submit" class="ds-cta">Sign In</button>
-    </form>
-    <div class="ds-preview-note">This is a demo. Any credentials work — you'll pick a role next to explore the platform.</div>
-    <div class="ds-footer">Powered by Cardinal AI · Preview Environment</div>
+    </aside>
+
+    <!-- RIGHT: Sign-in form panel -->
+    <section class="ds-form-panel">
+      <div class="ds-card">
+        <div class="ds-brand">
+          <div class="ds-brand-logo">C</div>
+          <div>
+            <div class="ds-brand-name">CARDINAL AI</div>
+            <div class="ds-brand-tagline">Know Before You Buy.</div>
+          </div>
+        </div>
+        <span class="ds-demo-badge">Demo Sign-In</span>
+        <h2 class="ds-title">Welcome to Cardinal AI</h2>
+        <p class="ds-sub">Sign in to explore what dealership teams see when they use Cardinal AI, across every role.</p>
+        <form id="ds-form" onsubmit="return demoSignIn(event)" novalidate>
+          <div class="ds-field">
+            <label class="ds-label" for="ds-email">Work email</label>
+            <input class="ds-input" type="email" id="ds-email" placeholder="you@dealership.com" autocomplete="off" required>
+          </div>
+          <div class="ds-field">
+            <label class="ds-label" for="ds-password">Password</label>
+            <input class="ds-input" type="password" id="ds-password" placeholder="••••••••••" autocomplete="off" required>
+          </div>
+          <button type="submit" class="ds-cta">Sign In</button>
+        </form>
+        <div class="ds-preview-note">This is a demo. Any credentials work, you'll pick a role next to explore the platform.</div>
+        <div class="ds-trust" role="list" aria-label="Platform security">
+          <span class="ds-trust-item" role="listitem"><span class="ds-trust-dot"></span>Enterprise-grade security</span>
+          <span class="ds-trust-item" role="listitem"><span class="ds-trust-dot"></span>Multi-tenant secure</span>
+          <span class="ds-trust-item" role="listitem"><span class="ds-trust-dot"></span>GDPR-ready</span>
+        </div>
+        <div class="ds-footer">Powered by Cardinal AI · Preview Environment</div>
+      </div>
+    </section>
   </div>
 </div>
 
