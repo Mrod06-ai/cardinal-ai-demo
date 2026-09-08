@@ -6266,7 +6266,7 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
       '</div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:10px">'+
         '<button class="btn btn-green" style="font-size:12.5px;padding:9px 16px" onclick="document.getElementById(\'gaStoreGrid\')?document.getElementById(\'gaStoreGrid\').scrollIntoView({behavior:\'smooth\',block:\'start\'}):window.scrollBy({top:600,behavior:\'smooth\'})">View Store Breakdown ↓</button>'+
-        '<button class="btn btn-ghost" style="font-size:12.5px;padding:9px 16px" onclick="alert(\'Board Report export coming soon — will render a PDF summary of Cardinal AI-attributed ROI, per-store contribution, and YoY delta.\')">Download Board Report</button>'+
+        '<a class="btn btn-ghost" style="font-size:12.5px;padding:9px 16px;text-decoration:none;display:inline-flex;align-items:center;gap:6px" href="Miami_Auto_Group_Board_Report_Cardinal_AI.pdf" download="Miami_Auto_Group_Board_Report_Cardinal_AI.pdf" onclick="try{if(window.gtag)gtag(\'event\',\'board_report_download\',{event_category:\'demo_hero\'})}catch(e){}">📄 Download Board Report</a>'+
       '</div>'+
     '</div>';
 
