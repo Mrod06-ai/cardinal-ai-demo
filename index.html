@@ -7435,17 +7435,40 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     document.head.appendChild(st);
   })();
 
-  /* Phase 3 #15 — shuffle candidates are IIFE-scoped so decisions persist
-     across renders. Each entry gets an optional `decision` (moved/auction/
-     retail_adjust/hold) plus `decisionTs` and optional `retailAdjust` when the
-     user picks a price change. Undecided cards show four action buttons;
-     decided cards collapse to a compact receipt with Undo. */
+  /* CAR-294 / CAR-295 — Inventory Shuffle three-action model.
+     Candidates now carry `year` and `crScore` so the recommender
+     (`computeShuffleRecommendation`) can flag Wholesale-appropriate units.
+     Decisions are one of: 'transfer' | 'wholesale' | 'dismiss'.
+     Dismiss requires re-auth + mandatory note + increments override counter.
+     Undo is preserved for all three. Wholesale destination is hardcoded to
+     Manheim until a second auction partner is signed (per M. Rodriguez, 2026-09-08). */
   var shuffleCands = [
-    {id:"s1", fromStore:"Sunshine Chevrolet of Orlando", toStore:"Mangrove Lexus of Naples",         veh:"2022 Lexus RX 350",              vin:"2T2BZMCA6NC128473", stk:"U8781", miles:32400,  color:"Nebula Gray",   days:78,  principal:44500, reason:"Aged 78 days at Orlando Chevy \u2014 32809 tourism/work-truck market wrong for luxury SUV. Naples 34109 retiree market ($131K income, median age 63) shows strong RX demand. Fast-turn expected.", decision:null, decisionTs:null, retailAdjust:null},
-    {id:"s2", fromStore:"Marion Ram of Ocala",           toStore:"Bayside Ford of Tampa",             veh:"2022 Ram 1500 Big Horn",         vin:"1C6RREBT7NN234891", stk:"U8822", miles:47100,  color:"Diamond Black", days:87,  principal:41200, reason:"Approaching Curtailment 1 in Ocala. Tampa 33619 blue-collar/logistics market has higher half-ton pickup velocity \u2014 Ford store 24-day segment avg vs 42-day here.", decision:null, decisionTs:null, retailAdjust:null},
-    {id:"s3", fromStore:"Bayside Mazda of Clearwater",   toStore:"Springs Subaru of Gainesville",     veh:"2022 Subaru Outback Premium",    vin:"4S4BTGPD5N3125478", stk:"U8795", miles:35800,  color:"Autumn Green",  days:54,  principal:29200, reason:"Trade-in mismatch \u2014 Outback belongs in Gainesville college/outdoor market (32609 median age 27, family 42%). Springs Subaru historical avg-hold 21 days on Outback vs 60+ at Clearwater.", decision:null, decisionTs:null, retailAdjust:null},
-    {id:"s4", fromStore:"Conch Jeep of Key West",        toStore:"Coral BMW of Boca Raton",           veh:"2023 BMW 330i xDrive",           vin:"WBA5R7C56PA123456", stk:"U8804", miles:12500,  color:"Alpine White",  days:105, principal:38900, reason:"No luxury-sedan movement in Key West (33040 tourism/Wrangler market). Boca 33431 demographic profile (median age 35, $103K income, 62.9% White professional) is classic 3 Series lease profile \u2014 historical 18-day turn.", decision:null, decisionTs:null, retailAdjust:null}
+    {id:"s1", fromStore:"Sunshine Chevrolet of Orlando", toStore:"Mangrove Lexus of Naples",         veh:"2022 Lexus RX 350",              year:2022, vin:"2T2BZMCA6NC128473", stk:"U8781", miles:32400,  color:"Nebula Gray",   days:78,  principal:44500, crScore:4.2, reason:"Aged 78 days at Orlando Chevy \u2014 32809 tourism/work-truck market wrong for luxury SUV. Naples 34109 retiree market ($131K income, median age 63) shows strong RX demand. Fast-turn expected.", decision:null, decisionTs:null, dismissNote:null},
+    {id:"s2", fromStore:"Marion Ram of Ocala",           toStore:"Bayside Ford of Tampa",             veh:"2022 Ram 1500 Big Horn",         year:2022, vin:"1C6RREBT7NN234891", stk:"U8822", miles:47100,  color:"Diamond Black", days:87,  principal:41200, crScore:4.0, reason:"Approaching Curtailment 1 in Ocala. Tampa 33619 blue-collar/logistics market has higher half-ton pickup velocity \u2014 Ford store 24-day segment avg vs 42-day here.", decision:null, decisionTs:null, dismissNote:null},
+    {id:"s3", fromStore:"Bayside Mazda of Clearwater",   toStore:"Springs Subaru of Gainesville",     veh:"2022 Subaru Outback Premium",    year:2022, vin:"4S4BTGPD5N3125478", stk:"U8795", miles:35800,  color:"Autumn Green",  days:54,  principal:29200, crScore:4.4, reason:"Trade-in mismatch \u2014 Outback belongs in Gainesville college/outdoor market (32609 median age 27, family 42%). Springs Subaru historical avg-hold 21 days on Outback vs 60+ at Clearwater.", decision:null, decisionTs:null, dismissNote:null},
+    {id:"s4", fromStore:"Conch Jeep of Key West",        toStore:"Coral BMW of Boca Raton",           veh:"2023 BMW 330i xDrive",           year:2023, vin:"WBA5R7C56PA123456", stk:"U8804", miles:12500,  color:"Alpine White",  days:105, principal:38900, crScore:4.6, reason:"No luxury-sedan movement in Key West (33040 tourism/Wrangler market). Boca 33431 demographic profile (median age 35, $103K income, 62.9% White professional) is classic 3 Series lease profile \u2014 historical 18-day turn.", decision:null, decisionTs:null, dismissNote:null},
+    {id:"s5", fromStore:"Sunshine Chevrolet of Orlando", toStore:null,                                 veh:"2007 Chevrolet Silverado 1500 LT", year:2007, vin:"2GCEC13Z871294856", stk:"U8511", miles:212450, color:"Silver Birch",  days:64,  principal:6800,  crScore:2.2, reason:"Trade-in from 2019 Silverado deal. 2007 model year with 212k miles \u2014 outside retail franchise scope for any store in the group. Recommend Wholesale (Manheim) rather than transfer.", decision:null, decisionTs:null, dismissNote:null}
   ];
+  /* CAR-295 — Wholesale auto-flag recommender. Returns the AI's default
+     recommendation plus the reason chip shown on the card. Thresholds are
+     demo defaults; production ships per-dealer thresholds (CAR-295 spec). */
+  var WHOLESALE_AGE_YEARS   = 15;       // model year <= (today - 15)
+  var WHOLESALE_MILES_FLOOR = 150000;
+  var WHOLESALE_CR_FLOOR    = 2.5;      // Manheim CR score below this = condition floor breach
+  function computeShuffleRecommendation(c){
+    var thisYear = (new Date()).getFullYear();
+    var age = thisYear - (c.year||thisYear);
+    var triggers = [];
+    if(age >= WHOLESALE_AGE_YEARS)             triggers.push('Age &ge; '+WHOLESALE_AGE_YEARS+'yr ('+c.year+')');
+    if(c.miles >= WHOLESALE_MILES_FLOOR)       triggers.push('Miles &ge; '+WHOLESALE_MILES_FLOOR.toLocaleString());
+    if(typeof c.crScore==='number' && c.crScore < WHOLESALE_CR_FLOOR) triggers.push('CR '+c.crScore.toFixed(1)+' &lt; '+WHOLESALE_CR_FLOOR+' floor');
+    if(triggers.length > 0){
+      return {action:'wholesale', triggers:triggers, chip:'Wholesale recommended \u2014 '+triggers.join(' &middot; ')};
+    }
+    return {action:'transfer', triggers:[], chip:'Transfer recommended \u2014 DNA fit '+(c.toStore||'')};
+  }
+  /* CAR-294 — override counter (session-scoped, mirrors backend override-cap concept). */
+  var shuffleOverrideCount = 0;
   /* Ephemeral toast for shuffle decisions */
   function shuffleToast(msg){
     var t = document.createElement("div");
@@ -7456,17 +7479,24 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     setTimeout(function(){ t.style.opacity="0"; setTimeout(function(){ t.remove(); },250); }, 2400);
   }
   function shuffleDecisionLabel(d){
-    if(d==="moved") return "Transfer approved";
-    if(d==="auction") return "Sent to auction";
+    if(d==="transfer")  return "Transfer approved";
+    if(d==="wholesale") return "Sent to wholesale (Manheim)";
+    if(d==="dismiss")   return "Recommendation dismissed";
+    /* Legacy labels kept for Undo of any pre-CAR-294 decisions still in memory. */
+    if(d==="moved")         return "Transfer approved";
+    if(d==="auction")       return "Sent to auction";
     if(d==="retail_adjust") return "Retail price adjusted";
-    if(d==="hold") return "Held in place";
+    if(d==="hold")          return "Held in place";
     return "";
   }
   function shuffleDecisionColor(d){
-    if(d==="moved") return "var(--green)";
-    if(d==="auction") return "var(--gold)";
+    if(d==="transfer")  return "var(--green)";
+    if(d==="wholesale") return "var(--gold)";
+    if(d==="dismiss")   return "var(--red)";
+    if(d==="moved")         return "var(--green)";
+    if(d==="auction")       return "var(--gold)";
     if(d==="retail_adjust") return "var(--navy)";
-    if(d==="hold") return "var(--ink-2)";
+    if(d==="hold")          return "var(--ink-2)";
     return "var(--ink-3)";
   }
   function shuffleFmtTime(ts){
@@ -7474,32 +7504,87 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     var d = new Date(ts);
     return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
   }
-  window.shuffleDecide = function(id, decision){
-    var c = shuffleCands.filter(function(x){return x.id===id;})[0]; if(!c) return;
+  /* CAR-294 core decision applier — assumes any gating (dismiss re-auth,
+     transfer/wholesale confirmations) has already happened upstream. */
+  function applyShuffleDecision(c, decision, note){
     c.decision = decision;
     c.decisionTs = Date.now();
-    if(decision==="retail_adjust"){
-      /* Default suggestion: 3% price reduction, rounded to nearest $100. */
-      var suggested = Math.round(c.principal * 0.97 / 100) * 100;
-      c.retailAdjust = suggested;
-    } else {
-      c.retailAdjust = null;
-    }
+    c.dismissNote = (decision==="dismiss") ? (note||"") : null;
+    if(decision==="dismiss"){ shuffleOverrideCount += 1; }
     var page=$("page-content"); if(page) page.innerHTML = viewShuffle();
     wireShuffle();
-    var toastMsg = decision==="moved" ? "Transfer approved: "+c.veh+" \u2192 "+c.toStore :
-                   decision==="auction" ? c.veh+" sent to auction" :
-                   decision==="retail_adjust" ? "Retail price adjusted on "+c.veh :
-                   "Held in place: "+c.veh;
+    var toastMsg = decision==="transfer"  ? "Transfer approved: "+c.veh+" \u2192 "+c.toStore :
+                   decision==="wholesale" ? c.veh+" sent to wholesale (Manheim)" :
+                   decision==="dismiss"   ? "Recommendation dismissed \u2014 override logged ("+shuffleOverrideCount+" this session)" :
+                   "";
     shuffleToast(toastMsg);
+  }
+  window.shuffleDecide = function(id, decision){
+    var c = shuffleCands.filter(function(x){return x.id===id;})[0]; if(!c) return;
+    if(decision==="dismiss"){
+      openShuffleDismissModal(c);
+      return;
+    }
+    applyShuffleDecision(c, decision, null);
   };
   window.shuffleUndo = function(id){
     var c = shuffleCands.filter(function(x){return x.id===id;})[0]; if(!c) return;
-    c.decision = null; c.decisionTs = null; c.retailAdjust = null;
+    if(c.decision === "dismiss" && shuffleOverrideCount > 0){ shuffleOverrideCount -= 1; }
+    c.decision = null; c.decisionTs = null; c.dismissNote = null;
     var page=$("page-content"); if(page) page.innerHTML = viewShuffle();
     wireShuffle();
     shuffleToast("Decision undone \u2014 "+c.veh+" back in queue");
   };
+  /* CAR-294 Dismiss modal — password re-auth + mandatory note + confirmation.
+     Password check is demo-only: any non-empty string accepted, mirroring the
+     sign-in modal. Production ships the real Auth0 re-verification. */
+  function openShuffleDismissModal(c){
+    /* Remove any prior instance so re-open shows a clean form. */
+    var prior = document.getElementById("shuffle-dismiss-modal"); if(prior) prior.remove();
+    var recAction = (computeShuffleRecommendation(c).action === "wholesale") ? "Wholesale (Manheim)" : "Transfer to "+(c.toStore||"another rooftop");
+    var m = document.createElement("div");
+    m.id = "shuffle-dismiss-modal";
+    m.style.cssText = "position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
+    m.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:22px 22px 18px 22px;box-shadow:0 20px 40px rgba(0,0,0,.25)">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" style="width:22px;height:22px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'+
+        '<div style="font-size:16px;font-weight:900;color:var(--ink-1)">Dismiss AI Recommendation</div>'+
+      '</div>'+
+      '<div style="font-size:11.5px;color:var(--ink-3);line-height:1.55;margin-bottom:14px">You are overriding the Cardinal AI recommendation for <b style="color:var(--ink-1)">'+esc(c.veh)+'</b> (Stk# '+esc(c.stk)+'). Recommended action: <b style="color:var(--ink-1)">'+recAction+'</b>. Overrides are logged against your rooftop override cap.</div>'+
+      '<div style="margin-bottom:10px">'+
+        '<div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px">Confirm your password</div>'+
+        '<input id="shuf-dismiss-pw" type="password" autocomplete="current-password" placeholder="Re-enter password" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box">'+
+      '</div>'+
+      '<div style="margin-bottom:10px">'+
+        '<div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px">Reason for override <span style="color:var(--red)">*</span></div>'+
+        '<textarea id="shuf-dismiss-note" rows="3" placeholder="e.g. Customer already committed to buy this unit / holding for existing conquest deal / manager review pending" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:12.5px;box-sizing:border-box;font-family:inherit;resize:vertical"></textarea>'+
+      '</div>'+
+      '<div id="shuf-dismiss-err" style="font-size:11px;color:var(--red);font-weight:700;min-height:15px;margin-bottom:8px"></div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+        '<button id="shuf-dismiss-cancel" class="btn btn-ghost" style="font-size:12px;padding:8px 14px">Cancel</button>'+
+        '<button id="shuf-dismiss-confirm" class="btn btn-navy" style="font-size:12px;padding:8px 14px;background:var(--red);border-color:var(--red)">Confirm dismiss</button>'+
+      '</div>'+
+    '</div>';
+    document.body.appendChild(m);
+    var pw = m.querySelector("#shuf-dismiss-pw");
+    var note = m.querySelector("#shuf-dismiss-note");
+    var err = m.querySelector("#shuf-dismiss-err");
+    setTimeout(function(){ pw.focus(); }, 40);
+    m.querySelector("#shuf-dismiss-cancel").onclick = function(){ m.remove(); };
+    m.querySelector("#shuf-dismiss-confirm").onclick = function(){
+      err.textContent = "";
+      if(!pw.value){ err.textContent = "Password required."; pw.focus(); return; }
+      if(!note.value.trim()){ err.textContent = "Override reason is required."; note.focus(); return; }
+      m.remove();
+      applyShuffleDecision(c, "dismiss", note.value.trim());
+    };
+    /* Escape closes; Enter in password moves to note; Cmd/Ctrl+Enter in note confirms. */
+    m.addEventListener("keydown", function(ev){
+      if(ev.key==="Escape"){ m.remove(); }
+      if(ev.key==="Enter" && ev.target===pw){ ev.preventDefault(); note.focus(); }
+      if(ev.key==="Enter" && (ev.metaKey || ev.ctrlKey) && ev.target===note){ ev.preventDefault(); m.querySelector("#shuf-dismiss-confirm").click(); }
+    });
+  }
   function wireShuffle(){
     /* All action buttons use inline onclick="shuffleDecide(...)" so nothing to bind here.
        Placeholder kept for future wiring symmetry with wireAprStep. */
@@ -7513,18 +7598,47 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     var pendingPrincipal = pending.reduce(function(a,c){return a+c.principal;},0);
     var avgDays = pending.length ? Math.round(pending.reduce(function(a,c){return a+c.days;},0)/pending.length) : 0;
     html += '<div class="card" style="padding:14px 16px;margin-bottom:12px">'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;text-align:center">'+
+      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:center">'+
         '<div><div style="font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px">Pending Units</div><div style="font-size:22px;font-weight:900;color:var(--ink-1)">'+pending.length+'</div></div>'+
         '<div><div style="font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px">Principal at Risk</div><div style="font-size:22px;font-weight:900;color:var(--red)">$'+pendingPrincipal.toLocaleString()+'</div></div>'+
         '<div><div style="font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px">Avg Days on Lot</div><div style="font-size:22px;font-weight:900;color:var(--gold)">'+avgDays+'</div></div>'+
         '<div><div style="font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px">Decisions Today</div><div style="font-size:22px;font-weight:900;color:var(--green)">'+decided.length+'</div></div>'+
+        '<div><div style="font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px">Overrides</div><div style="font-size:22px;font-weight:900;color:'+(shuffleOverrideCount>0?'var(--red)':'var(--ink-2)')+'">'+shuffleOverrideCount+'</div></div>'+
       '</div></div>';
     // Unit cards — render pending first, then decided (collapsed)
     html += '<div class="list">';
     pending.forEach(function(c){
       var urgency = c.days>=90?"var(--red)":c.days>=60?"var(--gold)":"var(--ink-2)";
-      /* Extract short destination-store label for the Move button */
-      var toShort = c.toStore.length > 22 ? c.toStore.slice(0,22)+"\u2026" : c.toStore;
+      var rec = computeShuffleRecommendation(c);
+      var isWholesale = (rec.action === "wholesale");
+      /* Shortened destination label used inside the Approve Transfer button. */
+      var toShort = c.toStore ? (c.toStore.length > 22 ? c.toStore.slice(0,22)+"\u2026" : c.toStore) : "another rooftop";
+      /* Rec chip appears above the buttons so the AI stance is visible before the click. */
+      var chipBg = isWholesale ? "rgba(217,150,3,.10)" : "rgba(1,105,111,.08)";
+      var chipFg = isWholesale ? "var(--gold)" : "var(--green)";
+      var chipBorder = isWholesale ? "var(--gold)" : "var(--green)";
+      var chip = '<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:'+chipBg+';border:1px solid '+chipBorder+';border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.02em;color:'+chipFg+'">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="'+chipFg+'" stroke-width="2.5" style="width:12px;height:12px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'+
+        'AI: '+rec.chip+
+      '</div>';
+      /* Origin / destination row. When wholesale is recommended and no toStore is set,
+         show the Manheim destination inline so the user sees the exit path. */
+      var destLabel  = isWholesale ? "Wholesale &middot; Manheim" : (c.toStore||"");
+      var destColor  = isWholesale ? "var(--gold)" : "var(--green)";
+      /* Three-action button row (CAR-294). The recommended action gets btn-navy;
+         the other two are btn-ghost. Approve Transfer is disabled when there is
+         no valid destination store (pure-wholesale candidates). */
+      var transferBtn;
+      if(c.toStore){
+        var transferClass = (rec.action==="transfer") ? "btn btn-navy" : "btn btn-ghost";
+        transferBtn = '<button class="'+transferClass+'" style="font-size:11.5px;padding:8px 12px;flex:1;min-width:0" onclick="shuffleDecide(\''+c.id+'\',\'transfer\')">Approve Transfer &rarr; '+esc(toShort)+'</button>';
+      } else {
+        transferBtn = '<button class="btn btn-ghost" disabled title="No same-group destination \u2014 unit is outside retail franchise scope" style="font-size:11.5px;padding:8px 12px;flex:1;min-width:0;opacity:.45;cursor:not-allowed">Approve Transfer (n/a)</button>';
+      }
+      var wholesaleClass = (rec.action==="wholesale") ? "btn btn-navy" : "btn btn-ghost";
+      var wholesaleStyle = (rec.action==="wholesale")
+        ? "font-size:11.5px;padding:8px 12px;background:var(--gold);border-color:var(--gold);color:#1a1a1a"
+        : "font-size:11.5px;padding:8px 12px;color:var(--gold);border-color:var(--gold)";
       html += '<div class="row" style="flex-direction:column;align-items:flex-start;padding:14px 16px;gap:10px">'+
       '<div style="display:flex;width:100%;align-items:flex-start;justify-content:space-between;gap:10px">'+
         '<div><div style="font-weight:800;font-size:13.5px;color:var(--ink-1)">'+c.veh+'</div>'+
@@ -7532,20 +7646,21 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
         '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">Stk# '+c.stk+' &middot; '+c.miles.toLocaleString()+' mi &middot; '+c.color+'</div></div>'+
         '<div style="text-align:right;flex-shrink:0"><div style="font-size:18px;font-weight:900;color:'+urgency+'">'+c.days+'</div><div style="font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">Days</div></div>'+
       '</div>'+
-      shuffleDnaCallout(c.fromStore, c.toStore) +
+      /* CAR-295 recommendation chip */
+      chip +
+      (c.toStore ? shuffleDnaCallout(c.fromStore, c.toStore) : "") +
       '<div style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:var(--bg);border-radius:8px">'+
         '<div style="font-size:11px;font-weight:700;color:var(--ink-1)">'+c.fromStore+'</div>'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>'+
-        '<div style="font-size:11px;font-weight:700;color:var(--green)">'+c.toStore+'</div>'+
+        '<div style="font-size:11px;font-weight:700;color:'+destColor+'">'+destLabel+'</div>'+
         '<div style="margin-left:auto;font-size:11px;font-weight:700;color:var(--ink-2)">$'+c.principal.toLocaleString()+'</div>'+
       '</div>'+
       '<div style="font-size:11.5px;color:var(--ink-3);line-height:1.5;padding:0 2px">'+c.reason+'</div>'+
-      /* Phase 3 #15 — four action buttons wired to shuffleDecide */
+      /* CAR-294 three-action button row */
       '<div style="display:flex;gap:6px;flex-wrap:wrap;width:100%">'+
-        '<button class="btn btn-navy" style="font-size:11.5px;padding:8px 12px;flex:1;min-width:0" onclick="shuffleDecide(\''+c.id+'\',\'moved\')">&rarr; Move to '+esc(toShort)+'</button>'+
-        '<button class="btn btn-ghost" style="font-size:11.5px;padding:8px 12px;color:var(--gold);border-color:var(--gold)" onclick="shuffleDecide(\''+c.id+'\',\'auction\')">Auction</button>'+
-        '<button class="btn btn-ghost" style="font-size:11.5px;padding:8px 12px" onclick="shuffleDecide(\''+c.id+'\',\'retail_adjust\')">Retail Adjust</button>'+
-        '<button class="btn btn-ghost" style="font-size:11.5px;padding:8px 12px" onclick="shuffleDecide(\''+c.id+'\',\'hold\')">Hold</button>'+
+        transferBtn +
+        '<button class="'+wholesaleClass+'" style="'+wholesaleStyle+'" onclick="shuffleDecide(\''+c.id+'\',\'wholesale\')">Wholesale (Manheim)</button>'+
+        '<button class="btn btn-ghost" style="font-size:11.5px;padding:8px 12px" onclick="shuffleDecide(\''+c.id+'\',\'dismiss\')">Dismiss</button>'+
       '</div>'+
       '</div>';
     });
@@ -7561,17 +7676,19 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
       decided.forEach(function(c){
         var dColor = shuffleDecisionColor(c.decision);
         var dLabel = shuffleDecisionLabel(c.decision);
-        var priceLine = (c.decision==="retail_adjust" && c.retailAdjust)
-          ? ' \u00b7 New retail $'+c.retailAdjust.toLocaleString()
+        /* Show override reason under dismissed rows so the audit trail is one glance away. */
+        var noteLine = (c.decision==="dismiss" && c.dismissNote)
+          ? '<div style="font-size:11px;color:var(--ink-2);line-height:1.5;margin-top:5px;padding:6px 8px;background:rgba(161,53,68,.06);border-left:2px solid var(--red);border-radius:4px"><span style="font-weight:800;color:var(--red)">Override reason:</span> '+esc(c.dismissNote)+'</div>'
           : '';
         html += '<div class="row" style="padding:12px 14px;flex-direction:column;align-items:flex-start;gap:6px;border-left:3px solid '+dColor+'">'+
           '<div style="display:flex;width:100%;align-items:center;gap:10px">'+
             '<div style="flex:1;min-width:0">'+
               '<div style="font-weight:700;font-size:12.5px;color:var(--ink-1)">'+esc(c.veh)+' <span style="font-size:10px;color:var(--ink-3);font-weight:500">&middot; Stk# '+c.stk+'</span></div>'+
-              '<div style="font-size:10.5px;color:'+dColor+';font-weight:700;margin-top:2px">'+dLabel+priceLine+' <span style="color:var(--ink-3);font-weight:500">&middot; '+shuffleFmtTime(c.decisionTs)+'</span></div>'+
+              '<div style="font-size:10.5px;color:'+dColor+';font-weight:700;margin-top:2px">'+dLabel+' <span style="color:var(--ink-3);font-weight:500">&middot; '+shuffleFmtTime(c.decisionTs)+'</span></div>'+
             '</div>'+
             '<button class="btn btn-ghost" style="font-size:10.5px;padding:6px 12px;flex-shrink:0" onclick="shuffleUndo(\''+c.id+'\')">Undo</button>'+
           '</div>'+
+          noteLine +
         '</div>';
       });
     }
