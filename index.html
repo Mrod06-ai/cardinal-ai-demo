@@ -5856,10 +5856,93 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     '<button class="btn btn-ghost" style="font-size:12.5px;padding:9px 14px" onclick="renderNav(\'inventory\')">'+iconSvg("inventory")+' Inventory</button>'+
     '</div>';
 
-    // ── OVERVIEW STACK FIRST — every management dashboard opens with the 30,000-ft summary.
-    //    Manager Queue moved BELOW the overview per user directive (Sep 2, 2026):
-    //    "As a Manager/GSM/GM/DP/GA, I want to know right away everything happening at
-    //     my store in 5 minutes or less. Overview first, work queue below."
+    // ── PHASE 1 (moved to bottom): live manager queue for UCM/GM/GSM/DP roles.
+    //    Overview stack renders first; work queue appears after.
+    if(role==="ucm" || role==="gm" || role==="gsm") html += queueSectionHtml();
+
+    // ── TODAY&#39;S APR LIST
+    html += '<div class="sec-head"><div class="seclabel">Today&#39;s Appraisals</div><span class="link" onclick="renderNav(\'recent\')">View All</span></div>';
+    html += '<div class="list">';
+    if(!APR.length){
+      html += '<div style="padding:18px 16px;text-align:center;font-size:12.5px;color:var(--ink-3)">'+
+        (liveOK ? '<strong style="color:var(--ink-2)">No appraisals yet today</strong><br>New submissions appear here the moment they are scored.'
+                : 'Live data unavailable \u2014 appraisal feed will populate once the Cardinal API responds.')+
+        '</div>';
+    }
+    APR.forEach(function(a){
+      var v = a.verdict;
+      var vColor = v==="buy"?"var(--green)":v==="neg"?"var(--gold)":"var(--red)";
+      var vLabel = v==="buy"?"BUY":v==="neg"?"NEGOTIATE":"PASS";
+      var priceDetail = v==="buy"?
+        '<div style="display:flex;gap:16px;margin-top:6px">'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green)">Purchase Price</div><div style="font-size:14px;font-weight:800;color:var(--green)">'+mny(a.purchased)+'</div></div>'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Market Retail Avg</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.mktAsk)+'</div></div>'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Buying Margin</div><div style="font-size:14px;font-weight:800;color:var(--green)">'+mnyDiff(a.mktAsk,a.purchased)+'</div></div>'+
+        '</div>' :
+        v==="neg"?
+        '<div style="display:flex;gap:16px;margin-top:6px">'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">Counter Offer</div><div style="font-size:14px;font-weight:800;color:var(--gold)">'+mny(a.counter)+'</div></div>'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Cardinal Max</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.offer)+'</div></div>'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Market Avg</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.mktAsk)+'</div></div>'+
+        '</div>' :
+        '<div style="display:flex;gap:16px;margin-top:6px">'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red)">Cardinal Max</div><div style="font-size:14px;font-weight:800;color:var(--red)">'+mny(a.offer)+'</div></div>'+
+          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Market Avg</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.mktAsk)+'</div></div>'+
+        '</div>';
+
+      html += '<div class="row" style="flex-direction:column;align-items:flex-start;padding:14px 16px;gap:0">'+
+      '<div style="display:flex;width:100%;align-items:flex-start;gap:12px;margin-bottom:6px">'+
+        (typeof a.score==="number"?scoreRing(a.score,44):'<div style="width:44px;height:44px;border-radius:50%;border:4.5px solid var(--line);flex-shrink:0"></div>')+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-weight:800;font-size:14px;color:var(--ink-1)">'+a.veh+'</div>'+
+          '<div style="font-family:ui-monospace,monospace;font-size:9.5px;color:var(--ink-3);margin-top:2px">'+a.vin+'</div>'+
+          '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">'+(typeof a.miles==="number"?nmb(a.miles)+" mi ·":"")+' '+(a.color||"")+'&nbsp;·&nbsp;'+(a.src||"")+'&nbsp;·&nbsp;'+a.time+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0"><span class="badge '+(v==="buy"?"buy":v==="neg"?"neg":"pass")+'">'+vLabel+'</span><div style="font-size:11px;color:var(--ink-3);margin-top:4px">Recon: '+mny(a.recon)+'</div></div>'+
+      '</div>'+
+      (a.reason?'<div style="font-size:11.5px;color:var(--ink-2);font-style:italic;padding:7px 10px;background:var(--bg);border-radius:6px;border-left:3px solid '+vColor+';margin-bottom:8px;width:100%">'+a.reason+'</div>':'')+
+      priceDetail+
+      '</div>';
+    });
+    html += '</div>';
+
+    // ── TEAM PERFORMANCE
+    html += '<div class="sec-head"><div class="seclabel">Team Performance</div><span class="link" onclick="renderNav(\'team\')">Full View</span></div>';
+    html += '<div class="list">';
+    var TEAM = liveArr("team","team_performance","reps") || [];
+    TEAM = TEAM.map(function(r,i){
+      return {
+        name: r.name || r.rep_name || r.user_name || "Team member",
+        rank: r.rank || (i+1),
+        today: firstNum(r.today, r.appraisals_today) !== null ? firstNum(r.today, r.appraisals_today) : "\u2014",
+        week: firstNum(r.week, r.appraisals_week) !== null ? firstNum(r.week, r.appraisals_week) : "\u2014",
+        convRate: firstNum(r.conversion_rate, r.convRate) !== null ? firstNum(r.conversion_rate, r.convRate) : 0
+      };
+    });
+    if(!TEAM.length){
+      html += '<div style="padding:18px 16px;text-align:center;font-size:12.5px;color:var(--ink-3)">'+
+        (liveOK ? '<strong style="color:var(--ink-2)">No team activity yet</strong><br>Rep performance appears once appraisals are submitted.'
+                : 'Live team performance unavailable.')+'</div>';
+    }
+    TEAM.slice(0,4).forEach(function(r,i){
+      html += '<div class="lb-row">'+
+      '<div class="lb-rank'+(i===0?" gold":i===1?" silver":"")+'">'+r.rank+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="lb-name">'+r.name+'</div>'+
+      '<div class="perf-bar"><i style="width:'+r.convRate+'%;background:'+(r.convRate>=70?"var(--green)":r.convRate>=55?"var(--gold)":"var(--red)")+'"></i></div></div>'+
+      '<div class="lb-stats">'+
+        '<div class="lb-stat"><div class="bv">'+r.today+'</div><div class="bl">Today</div></div>'+
+        '<div class="lb-stat"><div class="bv">'+r.week+'</div><div class="bl">Week</div></div>'+
+        '<div class="lb-stat"><div class="bv" style="color:'+(r.convRate>=70?"var(--green)":r.convRate>=55?"var(--gold)":"var(--red)")+'">'+r.convRate+'%</div><div class="bl">Conv.</div></div>'+
+      '</div></div>';
+    });
+    html += '</div>';
+
+    // ── WORK TRIAGE STACK FIRST — 2026-09-11 user directive supersedes 2026-09-02.
+    //    Order: Manager Queue → Today's Appraisals detail → Team Performance.
+    //    Overview stack (KPI tiles, snapshots, sources) renders BELOW so managers
+    //    open on active work, not on a dashboard summary. Duplicate taListHtml(APR)
+    //    call removed (was rendered twice: once as count-only KPI list, then again
+    //    in the hand-rolled Today's Appraisals block preserved in the moved block).
 
     // ── ROW 1: Appraisals tile + Score Summary + MTD Acquisitions + Override Rate
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">';
@@ -5923,13 +6006,6 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     '</div></div>';
 
     html += '</div>'; // end row 1
-
-    /* ── DEFECT 7 (2026-09-04) — Today's Appraisals detail list ──
-       The KPI tile above only ever showed counts, so a manager could see
-       "4 appraisals" but never why the engine landed where it did, and
-       clicking anything did nothing. This list gives every appraisal its
-       one-line Cardinal reasoning and opens a full detail modal on click. */
-    html += taListHtml(APR);
 
     // ── ROW 2: Auction Digest + Inventory Health + Floor Plan snapshots
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:16px;margin-top:4px">';
@@ -6025,87 +6101,6 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
        A twitching sub-cent value with no "as of" label reads as noise in a demo. */
     if(window.fpHomeInterval){ clearInterval(window.fpHomeInterval); window.fpHomeInterval = null; }
     /* Element already rendered with $XX.XX via fpDaily.toFixed(2); nothing further to do. */
-
-    // ── PHASE 1 (moved to bottom): live manager queue for UCM/GM/GSM/DP roles.
-    //    Overview stack renders first; work queue appears after.
-    if(role==="ucm" || role==="gm" || role==="gsm") html += queueSectionHtml();
-
-    // ── TODAY&#39;S APR LIST
-    html += '<div class="sec-head"><div class="seclabel">Today&#39;s Appraisals</div><span class="link" onclick="renderNav(\'recent\')">View All</span></div>';
-    html += '<div class="list">';
-    if(!APR.length){
-      html += '<div style="padding:18px 16px;text-align:center;font-size:12.5px;color:var(--ink-3)">'+
-        (liveOK ? '<strong style="color:var(--ink-2)">No appraisals yet today</strong><br>New submissions appear here the moment they are scored.'
-                : 'Live data unavailable \u2014 appraisal feed will populate once the Cardinal API responds.')+
-        '</div>';
-    }
-    APR.forEach(function(a){
-      var v = a.verdict;
-      var vColor = v==="buy"?"var(--green)":v==="neg"?"var(--gold)":"var(--red)";
-      var vLabel = v==="buy"?"BUY":v==="neg"?"NEGOTIATE":"PASS";
-      var priceDetail = v==="buy"?
-        '<div style="display:flex;gap:16px;margin-top:6px">'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green)">Purchase Price</div><div style="font-size:14px;font-weight:800;color:var(--green)">'+mny(a.purchased)+'</div></div>'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Market Retail Avg</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.mktAsk)+'</div></div>'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Buying Margin</div><div style="font-size:14px;font-weight:800;color:var(--green)">'+mnyDiff(a.mktAsk,a.purchased)+'</div></div>'+
-        '</div>' :
-        v==="neg"?
-        '<div style="display:flex;gap:16px;margin-top:6px">'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">Counter Offer</div><div style="font-size:14px;font-weight:800;color:var(--gold)">'+mny(a.counter)+'</div></div>'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Cardinal Max</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.offer)+'</div></div>'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Market Avg</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.mktAsk)+'</div></div>'+
-        '</div>' :
-        '<div style="display:flex;gap:16px;margin-top:6px">'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red)">Cardinal Max</div><div style="font-size:14px;font-weight:800;color:var(--red)">'+mny(a.offer)+'</div></div>'+
-          '<div><div style="font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Market Avg</div><div style="font-size:14px;font-weight:800;color:var(--ink-2)">'+mny(a.mktAsk)+'</div></div>'+
-        '</div>';
-
-      html += '<div class="row" style="flex-direction:column;align-items:flex-start;padding:14px 16px;gap:0">'+
-      '<div style="display:flex;width:100%;align-items:flex-start;gap:12px;margin-bottom:6px">'+
-        (typeof a.score==="number"?scoreRing(a.score,44):'<div style="width:44px;height:44px;border-radius:50%;border:4.5px solid var(--line);flex-shrink:0"></div>')+
-        '<div style="flex:1;min-width:0">'+
-          '<div style="font-weight:800;font-size:14px;color:var(--ink-1)">'+a.veh+'</div>'+
-          '<div style="font-family:ui-monospace,monospace;font-size:9.5px;color:var(--ink-3);margin-top:2px">'+a.vin+'</div>'+
-          '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">'+(typeof a.miles==="number"?nmb(a.miles)+" mi ·":"")+' '+(a.color||"")+'&nbsp;·&nbsp;'+(a.src||"")+'&nbsp;·&nbsp;'+a.time+'</div>'+
-        '</div>'+
-        '<div style="text-align:right;flex-shrink:0"><span class="badge '+(v==="buy"?"buy":v==="neg"?"neg":"pass")+'">'+vLabel+'</span><div style="font-size:11px;color:var(--ink-3);margin-top:4px">Recon: '+mny(a.recon)+'</div></div>'+
-      '</div>'+
-      (a.reason?'<div style="font-size:11.5px;color:var(--ink-2);font-style:italic;padding:7px 10px;background:var(--bg);border-radius:6px;border-left:3px solid '+vColor+';margin-bottom:8px;width:100%">'+a.reason+'</div>':'')+
-      priceDetail+
-      '</div>';
-    });
-    html += '</div>';
-
-    // ── TEAM PERFORMANCE
-    html += '<div class="sec-head"><div class="seclabel">Team Performance</div><span class="link" onclick="renderNav(\'team\')">Full View</span></div>';
-    html += '<div class="list">';
-    var TEAM = liveArr("team","team_performance","reps") || [];
-    TEAM = TEAM.map(function(r,i){
-      return {
-        name: r.name || r.rep_name || r.user_name || "Team member",
-        rank: r.rank || (i+1),
-        today: firstNum(r.today, r.appraisals_today) !== null ? firstNum(r.today, r.appraisals_today) : "\u2014",
-        week: firstNum(r.week, r.appraisals_week) !== null ? firstNum(r.week, r.appraisals_week) : "\u2014",
-        convRate: firstNum(r.conversion_rate, r.convRate) !== null ? firstNum(r.conversion_rate, r.convRate) : 0
-      };
-    });
-    if(!TEAM.length){
-      html += '<div style="padding:18px 16px;text-align:center;font-size:12.5px;color:var(--ink-3)">'+
-        (liveOK ? '<strong style="color:var(--ink-2)">No team activity yet</strong><br>Rep performance appears once appraisals are submitted.'
-                : 'Live team performance unavailable.')+'</div>';
-    }
-    TEAM.slice(0,4).forEach(function(r,i){
-      html += '<div class="lb-row">'+
-      '<div class="lb-rank'+(i===0?" gold":i===1?" silver":"")+'">'+r.rank+'</div>'+
-      '<div style="flex:1;min-width:0"><div class="lb-name">'+r.name+'</div>'+
-      '<div class="perf-bar"><i style="width:'+r.convRate+'%;background:'+(r.convRate>=70?"var(--green)":r.convRate>=55?"var(--gold)":"var(--red)")+'"></i></div></div>'+
-      '<div class="lb-stats">'+
-        '<div class="lb-stat"><div class="bv">'+r.today+'</div><div class="bl">Today</div></div>'+
-        '<div class="lb-stat"><div class="bv">'+r.week+'</div><div class="bl">Week</div></div>'+
-        '<div class="lb-stat"><div class="bv" style="color:'+(r.convRate>=70?"var(--green)":r.convRate>=55?"var(--gold)":"var(--red)")+'">'+r.convRate+'%</div><div class="bl">Conv.</div></div>'+
-      '</div></div>';
-    });
-    html += '</div>';
 
     return html;
   }
