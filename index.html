@@ -594,6 +594,10 @@ a{color:var(--navy);text-decoration:none}
 .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0;padding-bottom:90px}
 .topbar{height:54px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 26px;flex-shrink:0;position:sticky;top:0;z-index:10}
 .topbar-title{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.topbar-home{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;padding:0;background:transparent;border:0;cursor:pointer;text-decoration:none;transition:opacity .15s,background .15s}
+.topbar-home:hover{opacity:.85;background:rgba(0,0,0,.04)}
+.topbar-home:focus-visible{outline:2px solid var(--accent,#0a1628);outline-offset:2px}
+.topbar-home-img{width:32px;height:32px;border-radius:7px;object-fit:cover;display:block}
 .topbar-right{display:flex;align-items:center;gap:14px}
 .topbar-date{font-size:11.5px;color:var(--ink-3);font-weight:600}
 .topbar-badge{background:var(--green-dim);color:var(--green);font-size:10px;font-weight:800;letter-spacing:.07em;padding:3px 10px;border-radius:20px;text-transform:uppercase}
@@ -1212,6 +1216,7 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
   body[data-dgpage="1"] .topbar{background:#0a1628!important;
     border-bottom:1px solid rgba(255,255,255,.08)!important}
   body[data-dgpage="1"] .topbar-title{color:#f0ede8!important}
+  body[data-dgpage="1"] .topbar-home:hover{background:rgba(255,255,255,.08)!important}
   body[data-dgpage="1"] .topbar-date{color:rgba(240,237,232,.5)!important}
   body[data-dgpage="1"] .dg-wrap{background:#060d18}
   /* 1 — KPI tiles stay visible on the digest banner at every width */
@@ -1935,6 +1940,17 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     var target = ev.target;
     /* Cardinal AI logo click — finds .sb-logo anywhere in the dashboard */
     var logo = target.closest && target.closest('.sb-logo');
+    // Topbar Cardinal bird — mirrors sb-logo home behavior
+    window.goHomeFromTopbar = window.goHomeFromTopbar || function(ev){
+      if(ev && ev.preventDefault) ev.preventDefault();
+      window._storeCtx = null;
+      window._groupAdminStoreCtx = null;
+      window._groupAdminOrigin = false;
+      var body = document.body;
+      if(body && body.getAttribute('data-demo-view') === 'dashboard'){
+        body.setAttribute('data-demo-view', 'role-picker');
+      }
+    };
     if(logo && body.getAttribute('data-demo-view')==='dashboard'){
       ev.preventDefault();
       ev.stopPropagation();
@@ -4362,7 +4378,8 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     '<span class="sb-signout" onclick="signOut()">&#8594; Sign Out</span></div></div>'+
     /* MAIN */
     '<div class="main"><div class="topbar">'+
-    '<div class="topbar-title" id="topbar-title">Dashboard</div>'+
+    '<a href="#" class="topbar-home" id="topbar-home" aria-label="Cardinal AI — Home" onclick="goHomeFromTopbar(event)"><img src="cardinal_logo.jpg" alt="Cardinal AI" class="topbar-home-img"></a>'+
+    '<div class="topbar-title" id="topbar-title" aria-hidden="true" style="display:none">Dashboard</div>'+
     '<div class="topbar-right">'+
     '<span class="topbar-date" id="topbar-date"></span>'+
     ( (role==="gm"||role==="ucm"||role==="gsm") ? '<span class="topbar-badge">LIVE</span>' : "" )+
