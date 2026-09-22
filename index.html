@@ -6070,8 +6070,6 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
 
     html += '</div>'; // end row 2
 
-    html += workSectionsHtml;
-
     // ── ACQUISITION SOURCES
     html += '<div class="sec-head" style="margin-top:4px"><div class="seclabel">Acquisition Sources — MTD</div><span class="link" onclick="renderNav(\'sources\')">Full View</span></div>';
     html += '<div class="src-grid">';
@@ -6097,6 +6095,8 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
       '</div>';
     });
     html += '</div>';
+
+    html += workSectionsHtml;
 
     /* Floor Plan Daily Rate — render ONCE at 2-decimal precision and stop live-ticking.
        A twitching sub-cent value with no "as of" label reads as noise in a demo. */
