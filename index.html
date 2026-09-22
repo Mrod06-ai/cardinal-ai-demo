@@ -5856,8 +5856,11 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     '<button class="btn btn-ghost" style="font-size:12.5px;padding:9px 14px" onclick="renderNav(\'inventory\')">'+iconSvg("inventory")+' Inventory</button>'+
     '</div>';
 
-    // ── PHASE 1 (moved to bottom): live manager queue for UCM/GM/GSM/DP roles.
-    //    Overview stack renders first; work queue appears after.
+    // Keep the work sections together, below the compact overview cards.
+    var dashboardHeaderHtml = html;
+    html = '';
+
+    // ── Live manager queue for UCM/GM/GSM roles.
     if(role==="ucm" || role==="gm" || role==="gsm") html += queueSectionHtml();
 
     // ── TODAY&#39;S APR LIST
@@ -5937,12 +5940,8 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     });
     html += '</div>';
 
-    // ── WORK TRIAGE STACK FIRST — 2026-09-11 user directive supersedes 2026-09-02.
-    //    Order: Manager Queue → Today's Appraisals detail → Team Performance.
-    //    Overview stack (KPI tiles, snapshots, sources) renders BELOW so managers
-    //    open on active work, not on a dashboard summary. Duplicate taListHtml(APR)
-    //    call removed (was rendered twice: once as count-only KPI list, then again
-    //    in the hand-rolled Today's Appraisals block preserved in the moved block).
+    var workSectionsHtml = html;
+    html = dashboardHeaderHtml;
 
     // ── ROW 1: Appraisals tile + Score Summary + MTD Acquisitions + Override Rate
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">';
@@ -6070,6 +6069,8 @@ input[type=range].poor-range::-webkit-slider-thumb{background:var(--red)}
     '</div></div>';
 
     html += '</div>'; // end row 2
+
+    html += workSectionsHtml;
 
     // ── ACQUISITION SOURCES
     html += '<div class="sec-head" style="margin-top:4px"><div class="seclabel">Acquisition Sources — MTD</div><span class="link" onclick="renderNav(\'sources\')">Full View</span></div>';
